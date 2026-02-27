@@ -1,1 +1,29 @@
-PRUEBA commit
+# Desafío Práctico 1 - Spring Boot & JUnit 5 🚀
+
+Este proyecto consiste en una solución técnica desarrollada con el Framework **Spring Boot** para la gestión de registros en una base de datos en memoria (H2). [cite_start]El objetivo principal es poner en práctica la arquitectura de capas, la inversión de control (IoC), la inyección de dependencias (DI) y la validación mediante pruebas unitarias con JUnit[cite: 80, 89, 91].
+
+## 📋 Requisitos del Proyecto
+* **Lenguaje:** Java
+* [cite_start]**Framework:** Spring Boot [cite: 82]
+* [cite_start]**Base de Datos:** H2 (In-Memory) [cite: 83]
+* [cite_start]**Gestión de Perfiles:** Perfil `dev` activo [cite: 86]
+* [cite_start]**Librerías principales:** Lombok, Spring Data JPA, JUnit [cite: 84, 91]
+
+## 🏗️ Arquitectura de Capas
+[cite_start]El proyecto sigue una estructura estricta para garantizar el desacoplamiento[cite: 89, 90]:
+1.  [cite_start]**Entity:** Definición del objeto de negocio (Producto) utilizando anotaciones de Lombok para Getters y Setters[cite: 92].
+2.  **Repository:** Interfaz que extiende de `JpaRepository` para la persistencia de datos.
+3.  **Service:** Clase donde reside la lógica de negocio para las operaciones CRUD solicitadas.
+
+## 🧪 Pruebas Unitarias Implementadas
+[cite_start]Se han desarrollado 4 pruebas unitarias que validan el comportamiento del sistema[cite: 88]:
+
+1.  [cite_start]**`insertar_registros_test()`**: Inserta 100 registros y verifica mediante `assertEquals` que la cantidad en la base de datos sea exacta[cite: 93, 94, 96].
+2.  [cite_start]**`leer_registros_test()`**: Recupera los primeros 25 registros y comprueba que el tamaño de la lista devuelta sea 25[cite: 97, 98, 100].
+3.  [cite_start]**`modificar_registro_test()`**: Actualiza el valor del registro con ID 50 y valida que el nuevo valor se haya persistido correctamente[cite: 101, 102, 104].
+4.  [cite_start]**`borrar_registro_test()`**: Elimina el registro con ID 75 y verifica su ausencia mediante `assertNull`[cite: 105, 106, 107].
+
+## ⚙️ Configuración del Entorno
+Para ejecutar el proyecto  asegúrar que el archivo `application.properties` tenga definido el perfil activo:
+```properties
+spring.profiles.active=dev
