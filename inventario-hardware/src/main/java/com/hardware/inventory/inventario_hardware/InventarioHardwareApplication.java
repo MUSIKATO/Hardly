@@ -7,28 +7,34 @@ import org.springframework.boot.SpringApplication;
 import org.springframework.boot.autoconfigure.SpringBootApplication;
 import org.springframework.context.annotation.Bean;
 
-import java.util.ArrayList;
-import java.util.List;
+import java.util.stream.IntStream;
 
-@SpringBootApplication
+/**
+ * Clase principal de la aplicación. Es el punto de arranque del proyecto.
+ */
+@SpringBootApplication // Activa la configuración automática de Spring Boot (escanea capas, configura BD, etc.)
 public class InventarioHardwareApplication {
 
-	public static void main(String[] args) {
-		SpringApplication.run(InventarioHardwareApplication.class, args);
-	}
+    /** Método principal: inicia toda la aplicación Spring Boot. */
+    public static void main(String[] args) {
+        SpringApplication.run(InventarioHardwareApplication.class, args);
+    }
 
-	// Este Bean hará que los datos se carguen apenas inicies la app (Run) [cite:
-	// 33, 40]
-	@Bean
-	CommandLineRunner initDatabase(HardwareService service) {
-		return args -> {
-			List<Hardware> lista = new ArrayList<>();
-			for (int i = 1; i <= 100; i++) {
-				// Usamos el constructor de la entidad con Lombok
-				lista.add(new Hardware(null, "Componente inicial " + i, "Hardware", 50.0));
-			}
-			service.guardarMuchos(lista);
-			System.out.println("Base de datos cargada con 100 registros para visualización en H2.");
-		};
-	}
+    /**
+     * Se ejecuta automáticamente una vez que la aplicación arranca.
+     * Su función es precargar 100 registros de ejemplo en la base de datos H2
+     * para que puedan visualizarse en la consola web en http://localhost:8081/h2-console/
+     */
+    @Bean // Spring gestiona este método como un componente más del sistema
+    CommandLineRunner initDatabase(HardwareService service) {
+        return args -> {
+            // Genera 100 objetos Hardware numerados del 1 al 100 y los guarda en la BD
+            service.guardarMuchos(
+                IntStream.rangeClosed(1, 100)
+                    .mapToObj(i -> new Hardware(null, "Componente inicial " + i, "Hardware", 50.0))
+                    .toList()
+            );
+            System.out.println("Base de datos cargada con 100 registros.");
+        };
+    }
 }

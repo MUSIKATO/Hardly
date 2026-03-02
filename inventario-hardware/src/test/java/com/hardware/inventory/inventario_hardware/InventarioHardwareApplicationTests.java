@@ -8,90 +8,85 @@ import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.boot.test.context.SpringBootTest;
 import org.springframework.test.context.ActiveProfiles;
 
-import java.util.ArrayList;
 import java.util.List;
+import java.util.stream.IntStream;
 
 import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertNull;
 
-@SpringBootTest
-@ActiveProfiles("dev") // Asegura el uso del perfil solicitado [cite: 32]
+/**
+ * Pruebas unitarias del proyecto.
+ * Verifican que cada operación sobre la base de datos funciona correctamente.
+ */
+@SpringBootTest         // Levanta toda la aplicación Spring Boot para ejecutar los tests
+@ActiveProfiles("dev")  // Usa el perfil "dev", cargando application-dev.properties (base de datos H2 en memoria)
 class InventarioHardwareApplicationTests {
 
-	@Autowired // Implementación de DI (Inyección de Dependencias)
-	private HardwareService service;
+    @Autowired // Spring inyecta automáticamente el servicio (DI = Inyección de Dependencias)
+    private HardwareService service;
 
-	@Autowired
-	private HardwareRepository repository;
+    @Autowired // Spring inyecta el repositorio para poder limpiar la tabla en los tests
+    private HardwareRepository repository;
 
-	@Test
-	void insertar_registros_test() { // Prueba Unitaria #1 [cite: 39]
-		repository.deleteAll(); // Empezar con tabla vacía para que el conteo sea exactamente 100
-		List<Hardware> lista = new ArrayList<>();
-		for (int i = 1; i <= 100; i++) {
-			lista.add(new Hardware(null, "Componente " + i, "Hardware", 25.0));
-		}
+    /**
+     * Método auxiliar reutilizable: genera una lista de objetos Hardware.
+     * Evita repetir el mismo bloque de código en cada prueba.
+     */
+    private List<Hardware> crearLista(int cantidad) {
+        return IntStream.rangeClosed(1, cantidad)
+            .mapToObj(i -> new Hardware(null, "Componente " + i, "Hardware", 25.0))
+            .toList();
+    }
 
-		// Servicio para insertar 100 registros [cite: 40]
-		service.guardarMuchos(lista);
+    /**
+     * Prueba Unitaria #1: insertar_registros_test()
+     * Inserta 100 registros y comprueba que el total en la base de datos sea exactamente 100.
+     */
+    @Test
+    void insertar_registros_test() {
+        repository.deleteAll();                  // Limpia la tabla para empezar desde cero
+        service.guardarMuchos(crearLista(100));  // Inserta 100 registros usando el servicio
+        assertEquals(100, service.contarTodo()); // Verifica que hay exactamente 100 registros
+    }
 
-		// Comprobar con assertEqual el total [cite: 41, 42]
-		assertEquals(100, service.contarTodo());
-	}
+    /**
+     * Prueba Unitaria #2: leer_registros_test()
+     * Verifica que el servicio devuelva exactamente 25 registros al leer los primeros.
+     */
+    @Test
+    void leer_registros_test() {
+        service.guardarMuchos(crearLista(100));               // Asegura que hay al menos 25 registros en la BD
+        assertEquals(25, service.obtenerPrimeros25().size()); // Verifica que el servicio devuelve 25
+    }
 
-	@Test
-	void leer_registros_test() { // Prueba Unitaria #2 [cite: 43]
-		// Preparar datos: insertar al menos 25 registros para esta prueba aislada
-		List<Hardware> lista = new ArrayList<>();
-		for (int i = 1; i <= 100; i++) {
-			lista.add(new Hardware(null, "Componente " + i, "Hardware", 25.0));
-		}
-		service.guardarMuchos(lista);
+    /**
+     * Prueba Unitaria #3: modificar_registro_test()
+     * Modifica el nombre del registro 50 y verifica que el cambio quedó guardado correctamente.
+     */
+    @Test
+    void modificar_registro_test() {
+        List<Hardware> lista = crearLista(100);
+        service.guardarMuchos(lista);
+        Long id50 = lista.get(49).getId(); // Obtiene el ID real del 50º registro insertado (índice 49)
 
-		// Servicio que recupera los primeros 25 [cite: 44]
-		List<Hardware> primeros25 = service.obtenerPrimeros25();
+        service.actualizar(id50, "Procesador Actualizado"); // Cambia el nombre del registro 50
 
-		// Comprobar con assertEqual que el total es 25 [cite: 46]
-		assertEquals(25, primeros25.size());
-	}
+        // Verifica que el nombre guardado en la BD es el nuevo valor asignado
+        assertEquals("Procesador Actualizado", service.buscarPorId(id50).getNombre());
+    }
 
-	@Test
-	void modificar_registro_test() { // Prueba Unitaria #3 [cite: 47]
-		// Preparar datos: insertar al menos 50 registros; usar el ID real del 50º
-		List<Hardware> lista = new ArrayList<>();
-		for (int i = 1; i <= 100; i++) {
-			lista.add(new Hardware(null, "Componente " + i, "Hardware", 25.0));
-		}
-		service.guardarMuchos(lista);
-		Long idRegistro50 = lista.get(49).getId(); // 50º elemento (índice 49)
+    /**
+     * Prueba Unitaria #4: borrar_registro_test()
+     * Borra el registro 75 y verifica que ya no existe en la base de datos.
+     */
+    @Test
+    void borrar_registro_test() {
+        List<Hardware> lista = crearLista(100);
+        service.guardarMuchos(lista);
+        Long id75 = lista.get(74).getId(); // Obtiene el ID real del 75º registro insertado (índice 74)
 
-		String nuevoNombre = "Procesador Actualizado";
+        service.eliminar(id75);            // Borra el registro 75 usando el servicio
 
-		// Modificar el registro del 50º [cite: 48]
-		service.actualizar(idRegistro50, nuevoNombre);
-
-		// Obtener el registro modificado [cite: 49]
-		Hardware modificado = service.buscarPorId(idRegistro50);
-
-		// Comprobar con assertEqual el nuevo valor [cite: 50]
-		assertEquals(nuevoNombre, modificado.getNombre());
-	}
-
-	@Test
-	void borrar_resgitro_test() { // Prueba Unitaria #4
-		// Preparar datos: insertar al menos 75 registros; usar el ID real del 75º
-		List<Hardware> lista = new ArrayList<>();
-		for (int i = 1; i <= 100; i++) {
-			lista.add(new Hardware(null, "Componente " + i, "Hardware", 25.0));
-		}
-		service.guardarMuchos(lista);
-		Long idRegistro75 = lista.get(74).getId(); // 75º elemento (índice 74)
-
-		// Servicio para borrar el 75º registro [cite: 52]
-		service.eliminar(idRegistro75);
-
-		// Comprobar con assertNull que ha sido borrado [cite: 53]
-		Hardware eliminado = service.buscarPorId(idRegistro75);
-		assertNull(eliminado);
-	}
+        assertNull(service.buscarPorId(id75)); // Verifica que ya no existe (buscar devuelve null)
+    }
 }
